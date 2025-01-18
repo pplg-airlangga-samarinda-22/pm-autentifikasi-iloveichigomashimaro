@@ -10,18 +10,17 @@
     <form action="" method="post" enctype="multipart/form-data">
         <div class="form-item">
             <label for="laporan">Isi Laporan</label>
-            <textarea name="laporan" id="laporan"><?= $row["isi_laporan"] ?></textarea>
-    </div>
-    <div class="form-item">
-        <label for="foto">Foto Pendukung</label>
-        <img src="gambar/<?= $row["foto"] ?>" alt=""><br>
-        <input type="file" name="foto" id="foto"><br><br>
-    </div>
-    <button type="submit">Kirim Laporan</button>
-    <a href="aduan.php">Batal</a>
+            <textarea name="laporan" id="laporan"><?= htmlspecialchars($row["isi_laporan"]) ?></textarea>
+        </div>
+        <div class="form-item">
+            <label for="foto">Foto Pendukung</label>
+            <img src="gambar/<?= htmlspecialchars($row["foto"]) ?>" alt=""><br>
+            <input type="file" name="foto" id="foto"><br><br>
+        </div>
+        <button type="submit">Kirim Laporan</button>
+        <a href="aduan.php">Batal</a>
+    </form>
 </body>
-
-
 </html>
 
 <?php
@@ -29,23 +28,44 @@ session_start();
 require "koneksi.php";
 
 if ($_SERVER['REQUEST_METHOD'] === "GET") {
-    $id_pengaduan = $_GET["id"];
+    if (isset($_GET["id"])) {
+        $id_pengaduan = $_GET["id"];
 
-    $sql = "SELECT * FROM pengaduan where id_pengaduan=?";
-    $row = $koneksi->execute_query($sql, [$id_pengaduan])->fetch_assoc();
-    var_dump($_GET); echo "<br>";
-    var_dump($row);
+        $sql = "SELECT * FROM pengaduan WHERE id_pengaduan=?";
+        $stmt = $koneksi->prepare($sql);
+        $stmt->bind_param("i", $id_pengaduan);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+    }
 } elseif ($_SERVER['REQUEST_METHOD'] === "POST") {
-    $tanggal = date('Y-m-d');
-    $id_pengaduan = $_GET["id"];
-    $laporan = $_POST["laporan"];
-    $foto = (isset($_FILES['foto']))?$_FILES['foto']['name']:"";
+    if (isset($_GET["id"])) {
+        $id_pengaduan = $_GET["id"];
+        $laporan = $_POST["laporan"];
+        $foto = "";
 
-    $sql = "UPDATE pengaduan SET tgl_pengaduan=?, isi_laporan?, foto=? WHERE id_pengaduan=?";
- }
+        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+            $foto = $_FILES['foto']['name'];
+            $target_dir = "gambar/";
+            $target_file = $target_dir . basename($foto);
+            if (move_uploaded_file($_FILES['foto']['tmp_name'], $target_file)) {
+            } else {
+                echo "<script>alert('File upload failed.')</script>";
+                exit;
+            }
+        }
 
- if ($row) {
-    echo "<script>alert('Pengaduan baru telah berhasil disimpan!')</script>";
-    header("location:aduan.php")
- }
+        $tanggal = date('Y-m-d');
+        
+        $sql = "UPDATE pengaduan SET tgl_pengaduan=?, isi_laporan=?, foto=? WHERE id_pengaduan=?";
+        $stmt = $koneksi->prepare($sql);
+        $stmt->bind_param("sssi", $tanggal, $laporan, $foto, $id_pengaduan);
+        
+        if ($stmt->execute()) {
+            echo "<script>alert('Pengaduan berhasil diperbarui!'); window.location.href = 'aduan.php';</script>";
+        } else {
+            echo "<script>alert('Pengaduan gagal diperbarui.');</script>";
+        }
+    }
+}
 ?>
