@@ -6,8 +6,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengaduan</title>
 </head>
 <body>
@@ -23,10 +21,10 @@
 
         <tbody>
             <?php
-                $nuk = $_SESSION['nik'];
+                $nik = $_SESSION['nik'];
                 $no=0;
                 $sql = "SELECT * FROM pengaduan WHERE nik=? order by id_pengaduan desc";
-                $pengaduan = $koneksi->execute_query($sqk, [$nuk])-> fetch_all(MYSQLI_ASSOC);
+                $pengaduan = $koneksi->execute_query($sql, [$nik])->fetch_all(MYSQLI_ASSOC);
                 foreach ($pengaduan as $item) {
             ?>
 
